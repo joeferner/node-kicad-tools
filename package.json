@@ -1,0 +1,27 @@
+{
+  "name": "kicad-tools",
+  "version": "0.0.1",
+  "description": "Collection of tools for working with KiCad",
+  "main": "./index",
+  "scripts": {
+    "test": "./node_modules/.bin/nodeunit test"
+  },
+  "bin": {
+    "kicad-split": "./bin/kicad-split.js"
+  },
+  "author": "Joe Ferner <joe@fernsroth.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joeferner/node-kicad-tools.git"
+  },
+  "dependencies": {
+    "optimist": "~0.6.0",
+    "kicad2svg": "0.0.1",
+    "async": "~0.2.9",
+    "prompt": "~0.2.11"
+  },
+  "devDependencies": {
+    "nodeunit": "~0.8.1"
+  }
+}
