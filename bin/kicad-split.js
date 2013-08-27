@@ -52,7 +52,10 @@ args.shouldOverwrite = function(outFile, callback) {
 console.log('Splitting', args.in, 'to', args.outdir);
 kicadTools.split(args, function(err) {
   if (err) {
-    console.error(err);
+    console.error(err.stack);
+    if (err.cause) {
+      console.error(err.cause.stack);
+    }
     return process.exit(1);
   }
   console.log('Split complete');
