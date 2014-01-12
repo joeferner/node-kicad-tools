@@ -9,9 +9,13 @@ var async = require('async');
 
 var argv = optimist
   .usage('Usage: kicadFixGerverFileNames.js [options]')
+  .options('indir', {
+    alias: 'i',
+    describe: 'Input directory.'
+  })
   .options('out', {
     alias: 'o',
-    describe: 'Gerbv project output.'
+    describe: 'Gerbv project output (.gvp).'
   })
   .alias('help', 'h')
   .alias('h', '?')
@@ -21,6 +25,8 @@ if (argv.help) {
   optimist.showHelp();
   process.exit(1);
 }
+
+argv.indir = argv.indir || '.';
 
 process.on('uncaughtException', function(err) {
   console.error('uncaughtException', err.stack || err);
@@ -36,7 +42,7 @@ async.auto({
 });
 
 function renameFiles(callback) {
-  return fs.readdir('.', function(err, files) {
+  return fs.readdir(argv.indir, function(err, files) {
     if(err) {
       return callback(err);
     }
@@ -46,7 +52,7 @@ function renameFiles(callback) {
         if(m[3] == 'gbr') {
           m[3] = 'gko';
         }
-        var newFileName = m[1] + '.' + m[3];
+        var newFileName = path.join(argv.indir, m[1] + '.' + m[3]);
         return moveFile(file, newFileName, callback);
       }
 
@@ -65,7 +71,7 @@ function createGerbv(outputFileName, callback, options) {
     return callback();
   }
   console.log('creating gerbv project');
-  return fs.readdir('.', function(err, files) {
+  return fs.readdir(argv.indir, function(err, files) {
     if(err) {
       return callback(err);
     }
