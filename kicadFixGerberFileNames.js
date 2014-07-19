@@ -7,15 +7,36 @@ var fs = require('fs');
 var path = require('path');
 var async = require('async');
 
+var COLORS = {
+  "real": {
+    '.gbl': '0 15201 489',
+    '.gbs': '39619 39619 39619',
+    '.gbo': '65535 65535 65535',
+    '.gtl': '0 11607 135',
+    '.gts': '46953 46953 46953',
+    '.gto': '65535 65535 65535',
+    '.gko': '65535 50629 13107',
+    '.txt': '0 0 0',
+    'background': '0 16667 735'
+  },
+  "print": {
+    '.gbl': '65535 65535 65535',
+    '.gbs': '39619 39619 39619',
+    '.gbo': '0 0 0',
+    '.gtl': '65535 65535 65535',
+    '.gts': '32239 32239 32239',
+    '.gto': '0 0 0',
+    '.gko': '0 0 0',
+    '.txt': '0 0 0',
+    'background': '65535 65535 65535'
+  }
+};
+
 var argv = optimist
   .usage('Usage: kicadFixGerverFileNames.js [options]')
   .options('indir', {
     alias: 'i',
     describe: 'Input directory.'
-  })
-  .options('out', {
-    alias: 'o',
-    describe: 'Gerbv project output (.gvp).'
   })
   .alias('help', 'h')
   .alias('h', '?')
@@ -34,7 +55,12 @@ process.on('uncaughtException', function(err) {
 
 async.auto({
   'renameFiles': renameFiles,
-  'createGerbv': ['renameFiles', createGerbv.bind(null, argv.out)]
+  'createGerbv': ['renameFiles', function(callback, data) {
+    return createGerbv(data.renameFiles + '.gvp', COLORS['real'], callback);
+  }],
+  'createGerbvPrint': ['renameFiles', function(callback, data) {
+    return createGerbv(data.renameFiles + '-print.gvp', COLORS['print'], callback);
+  }]
 }, function(err) {
   if(err) {
     console.error(err.stack);
@@ -42,17 +68,24 @@ async.auto({
 });
 
 function renameFiles(callback) {
+  var baseName;
   return fs.readdir(argv.indir, function(err, files) {
     if(err) {
       return callback(err);
     }
     async.forEach(files, function(file, callback) {
       var m;
+      
+      if(m = file.match(/(.*)\.(gts|gto|gtl|gko|gbs||gbo)/)) {
+        baseName = path.join(argv.indir, m[1]);
+      }
+      
       if(m = file.match(/(.*)-[BFE](.*)\.(.*)/)) {
         if(m[3] == 'gbr') {
           m[3] = 'gko';
         }
         var newFileName = path.join(argv.indir, m[1] + '.' + m[3]);
+        baseName = path.join(argv.indir, m[1]);
         return moveFile(file, newFileName, callback);
       }
 
@@ -62,15 +95,20 @@ function renameFiles(callback) {
       }
       
       return callback();
-    }, callback);
+    }, function(err) {
+      if(err) {
+        return callback(err);
+      }
+      return callback(null, baseName);
+    });
   });
 }
 
-function createGerbv(outputFileName, callback, options) {
+function createGerbv(outputFileName, colors, callback) {
   if(!outputFileName) {
     return callback();
   }
-  console.log('creating gerbv project');
+  console.log('creating gerbv project: ' + outputFileName);
   return fs.readdir(argv.indir, function(err, files) {
     if(err) {
       return callback(err);
@@ -80,34 +118,36 @@ function createGerbv(outputFileName, callback, options) {
     files.forEach(function(file) {
       var ext = path.extname(file).toLowerCase();
       var fname = path.relative(path.dirname(path.resolve(outputFileName)), file);
+      var color = colors[ext] || '0 0 0';
       switch(ext) {
         case '.gbl':
-          output += '(define-layer! 7 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(0 15201 489)))\n';
+          output += '(define-layer! 7 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(' + color + ')))\n';
           break;
         case '.gbs':
-          output += '(define-layer! 6 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(39619 39619 39619)))\n';
+          output += '(define-layer! 6 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(' + color + ')))\n';
           break;
         case '.gbo':
-          output += '(define-layer! 5 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(65535 65535 65535)))\n';
+          output += '(define-layer! 5 (cons \'filename "' + fname + '")(cons \'visible #f)(cons \'color #(' + color + ')))\n';
           break;
         case '.gtl':
-          output += '(define-layer! 4 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(0 11607 135)))\n';
+          output += '(define-layer! 4 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(' + color + ')))\n';
           break;
         case '.gts':
-          output += '(define-layer! 3 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(46953 46953 46953)))\n';
+          output += '(define-layer! 3 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(' + color + ')))\n';
           break;
         case '.gto':
-          output += '(define-layer! 2 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(65535 65535 65535)))\n';
+          output += '(define-layer! 2 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(' + color + ')))\n';
           break;
         case '.gko':
-          output += '(define-layer! 1 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(65535 50629 13107)))\n';
+          output += '(define-layer! 1 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(' + color + ')))\n';
           break;
         case '.txt':
-          output += '(define-layer! 0 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(0 0 0))(cons \'attribs (list (list \'autodetect \'Boolean 1) (list \'zero_supression \'Enum 1) (list \'units \'Enum 0) (list \'digits \'Integer 4))))\n';
+          output += '(define-layer! 0 (cons \'filename "' + fname + '")(cons \'visible #t)(cons \'color #(' + color + '))(cons \'attribs (list (list \'autodetect \'Boolean 1) (list \'zero_supression \'Enum 1) (list \'units \'Enum 0) (list \'digits \'Integer 4))))\n';
           break;
       }
     });
-    output += '(define-layer! -1 (cons \'filename "' + path.dirname(path.resolve(outputFileName)) + '")(cons \'visible #f)(cons \'color #(0 16667 735)))\n';
+    var color = colors['background'] || '65535 65535 65535';
+    output += '(define-layer! -1 (cons \'filename "' + path.dirname(path.resolve(outputFileName)) + '")(cons \'visible #f)(cons \'color #(' + color + ')))\n';
     output += '(set-render-type! 0)\n';
     return fs.writeFile(outputFileName, output, callback);
   });
