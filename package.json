@@ -16,13 +16,15 @@
     "url": "https://github.com/joeferner/node-kicad-tools.git"
   },
   "dependencies": {
-    "optimist": "~0.6.0",
-    "kicad2svg": "0.0.1",
-    "async": "~0.2.9",
-    "prompt": "~0.2.11",
-    "fs-extra": "~0.8.1"
+    "async": "^1.2.1",
+    "fs-extra": "^0.19.0",
+    "glob": "^5.0.10",
+    "kicad2svg": "0.0.2",
+    "optimist": "^0.6.1",
+    "prompt": "^0.2.14",
+    "request": "^2.57.0"
   },
   "devDependencies": {
-    "nodeunit": "~0.8.1"
+    "nodeunit": "^0.9.1"
   }
 }
