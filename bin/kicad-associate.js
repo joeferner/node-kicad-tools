@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+console.log("Associates schematic symbols with PCB footprints");
+console.log("TODO: Validate schematic symbol with inventory");
+
 var optimist = require('optimist');
 var fs = require('fs');
 var path = require('path');
