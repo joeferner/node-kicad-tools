@@ -75,28 +75,28 @@ function readSchFiles(callback, data) {
           hasInventoryId = false;
           hasModule = false;
         }
-        
+
         m = line.match(/^L (.*?) (.*?)$/);
         if (m) {
           ref = m[2];
         }
-        
+
         m = line.match(/^F .*? "kicadlib:(.*?)" .*$/);
         if (m) {
           results.refToModule[ref] = m[1];
           hasModule = true;
         }
-        
+
         m = line.match(/^F .*? "(.*?)" .* "inventoryId"$/);
         if (m) {
           results.refsToInventoryId[ref] = m[1];
           results.inventoryIds.push(m[1]);
           hasInventoryId = true;
         }
-        
+
         m = line.match(/^\$EndComp/);
         if(m) {
-          if(!hasInventoryId && ref[0] != '#') {
+          if(!hasInventoryId && !hasModule && ref[0] != '#') {
             console.log(ref + ' missing inventoryId');
           }
           ref = null;
@@ -170,7 +170,7 @@ function associate(callback, data) {
     var ref = null;
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();i
-            
+
       var m = line.match(/^L (.*?) (.*?)$/);
       if (m) {
         ref = m[2];
@@ -181,13 +181,18 @@ function associate(callback, data) {
         if(parseInt(m[1]) == 2) {
           var inventoryId = schFile.refsToInventoryId[ref];
           var associatedModule = schFile.refToModule[ref];
-          if(!associatedModule && inventoryId) {
+          if(inventoryId) {
             var part = parts[inventoryId];
             if(part) {
               var kicadModules = part.kicadModules;
               if(kicadModules && kicadModules.length == 1) {
                 var kicadModule = kicadModules[0].name;
-                lines[i] = 'F 2 "kicadlib:' + kicadModule + '" ' + m[2];
+                var restOfLine = m[2];
+                if(associatedModule != kicadModule) {
+                  console.log('associating ' + ref + ' to ' + kicadModule);
+                  restOfLine = restOfLine.replace('0000', '0001');
+                  lines[i] = 'F 2 "kicadlib:' + kicadModule + '" ' + restOfLine;
+                }
               } else if(!kicadModules || kicadModules.length == 0) {
                 console.log('no module for ' + ref + ' on inventory id ' + inventoryId);
               } else {
