@@ -111,6 +111,9 @@ function resolveParts(callback, data) {
   var inventoryIds = toSet([].concat.apply([], data.schFiles.map(function(r) { return r.inventoryIds; })));
   var parts = {};
   return async.forEachLimit(inventoryIds, 5, function(inventoryId, callback) {
+    if (inventoryId == 'NA') {
+      return callback();
+    }
     var url = partUrlPrefix + inventoryId;
     return request(url, function(err, res, body) {
       if (err) {
